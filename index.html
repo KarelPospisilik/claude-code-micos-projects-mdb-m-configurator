@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MDB M Fiber Optic Box Configurator</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    button:focus { outline: none; }
+    select:focus { outline: none; }
+    .fadeUp { animation: fadeUp 0.35s ease; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #E7F5F9; }
+    ::-webkit-scrollbar-thumb { background: #0033A0; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useCallback, useRef } = React;
+
+// ── Design tokens ──────────────────────────────────────────────────────────
+const PLP_BLUE   = "#0033A0";
+const RED_ACCENT = "#E4002B";
+const LIGHT_BG   = "#E7F5F9";
+const CARD_BG    = "#ffffff";
+const BORDER     = "#e0e0e0";
+const DARK_GRAY  = "#333333";
+const MID_GRAY   = "#888888";
+
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const GROMMETS = [
+  { code: "A", label: "A — 24× Ø 1.8–2.2 mm (already cut)",                      sku: "85C3.46/000X" },
+  { code: "B", label: "B — 24× Ø 2.2–3.0 mm (already cut)",                      sku: "85C3.61/000X" },
+  { code: "C", label: "C — 12× Ø 3.4–4.6 mm (can be cut)",                       sku: "85C3.71/000X" },
+  { code: "D", label: "D — 12× Ø 4.4–5.6 mm (can be cut)",                       sku: "85C3.62/000X" },
+  { code: "E", label: "E — 8× Ø 5.4–9.6 mm (can be cut)",                        sku: "85C3.92/000X" },
+  { code: "F", label: "F — 8× Ø 6.4–7.6 mm (can be cut)",                        sku: "85C3.43/000X" },
+  { code: "G", label: "G — 4× Ø 7.4–8.6 mm (can be cut)",                        sku: "85C3.18/000X" },
+  { code: "H", label: "H — 4× Ø 8.4–9.6 mm (can be cut)",                        sku: "85C3.14/000X" },
+  { code: "J", label: "J — 2× Ø 9.4–10.6 mm + 2× Ø 11.4–13.0 mm (can be cut)", sku: "85C3.45/000X" },
+  { code: "K", label: "K — 2× Ø 9.4–10.6 mm + 2× Ø 10.4–11.6 mm (can be cut)", sku: "85C3.44/000X" },
+  { code: "P", label: "P — PG 16",                                               sku: "On request", topOnly: true },
+  { code: "N", label: "N — No grommet (position not used)",                       sku: null },
+];
+
+const ORGANIZERS = [
+  {
+    code: "A",
+    type: "Patching",
+    trays: "KM 5",
+    splices: 96,
+    connectors: "48× SC / 96× LC",
+    sku: "85C3.91/000X",
+  },
+  {
+    code: "B",
+    type: "Patching + Splicing",
+    trays: "KM 4, KM 5, KM 6, KM 7",
+    splices: 96,
+    connectors: "32× SC / 64× LC",
+    sku: "85C3.92/000X",
+  },
+  {
+    code: "C",
+    type: "Splicing Only",
+    trays: "KM 4 and KM 6",
+    splices: 144,
+    connectors: null,
+    sku: "85C3.93/000X",
+  },
+  {
+    code: "D",
+    type: "Splicing Only",
+    trays: "KM 9",
+    splices: 144,
+    connectors: null,
+    sku: "85C3.94/000X",
+  },
+];
+
+// Tray module definitions per fiber management type
+const TRAY_DEFS = {
+  A: {
+    slots: 8,
+    label: "Fiber Management A",
+    options: [
+      { code: "KA", desc: "KM 5 — heatshrink, up to 12× SC / 24× LC connectors", sku: "85C3.76/000X" },
+      { code: "KB", desc: "KM 7 — ribbon, up to 8× SC / 16× LC connectors",       sku: "85C3.77/000X" },
+      { code: "KC", desc: "KM 4 — crimp, up to 24 splices",                        sku: "85C3.78/000X" },
+      { code: "N",  desc: "Empty — no module",                                     sku: null },
+    ],
+  },
+  B: {
+    slots: 4,
+    label: "Fiber Management B",
+    options: [
+      { code: "A",  desc: "KM 4 — heatshrink, up to 24 splices",                      sku: "85C3.79/000X" },
+      { code: "B",  desc: "KM 6 — ribbon, up to 24 splices",                          sku: "85C3.81/000X" },
+      { code: "C",  desc: "KM 5 — crimp, up to 12× SC / 24× LC connectors",           sku: "85C3.82/000X" },
+      { code: "D",  desc: "KM 7 — heatshrink, up to 8× SC / 16× LC connectors",       sku: "85C3.83/000X" },
+      { code: "E",  desc: "KM 4 — ribbon, up to 24 splices",                          sku: "85C3.84/000X" },
+      { code: "F",  desc: "KM 6 — crimp, up to 24 splices",                           sku: "85C3.85/000X" },
+      { code: "G",  desc: "KM 5 — heatshrink, up to 12× SC / 24× LC connectors",      sku: "85C3.86/000X" },
+      { code: "H",  desc: "KM 7 — ribbon, up to 8× SC / 16× LC connectors",           sku: "85C3.87/000X" },
+      { code: "I",  desc: "KM 4 — crimp, up to 24 splices",                           sku: "85C3.82/000X" },
+      { code: "J",  desc: "KM 5 — heatshrink, up to 12× SC / 24× LC connectors",      sku: "85C3.88/000X" },
+      { code: "KA", desc: "KM 5 — heatshrink, up to 12× SC / 24× LC connectors",      sku: "85C3.76/000X" },
+      { code: "KB", desc: "KM 7 — ribbon, up to 8× SC / 16× LC connectors",           sku: "85C3.77/000X" },
+      { code: "KC", desc: "KM 4 — crimp, up to 24 splices",                           sku: "85C3.78/000X" },
+      { code: "N",  desc: "Empty — no module",                                         sku: null },
+    ],
+  },
+  C: {
+    slots: 6,
+    label: "Fiber Management C",
+    options: [
+      { code: "A", desc: "KM 4 — heatshrink, up to 24 splices",  sku: "85C3.79/000X" },
+      { code: "B", desc: "KM 6 — ribbon, up to 24 splices",       sku: "85C3.81/000X" },
+      { code: "C", desc: "KM 4 — crimp, up to 24 splices",        sku: "85C3.82/000X" },
+      { code: "D", desc: "KM 6 — heatshrink, up to 24 splices",   sku: "85C3.83/000X" },
+      { code: "E", desc: "KM 4 — ribbon, up to 24 splices",       sku: "85C3.84/000X" },
+      { code: "F", desc: "KM 6 — crimp, up to 24 splices",        sku: "85C3.85/000X" },
+      { code: "N", desc: "Empty — no module",                      sku: null },
+    ],
+  },
+  D: {
+    slots: 12,
+    label: "Fiber Management D",
+    options: [
+      { code: "L", desc: "KM 9 — heatshrink and crimp, up to 12 splices", sku: "85AV.52/000X" },
+      { code: "N", desc: "Empty — no module",                              sku: null },
+    ],
+  },
+};
+
+const DEFAULT_TRAYS = {
+  A: Array(8).fill("N"),
+  B: Array(4).fill("N"),
+  C: Array(6).fill("N"),
+  D: Array(12).fill("N"),
+};
+
+// ── Code generation ─────────────────────────────────────────────────────────
+
+function buildS3(organizer, trays) {
+  if (!organizer || !trays.length) return "?";
+  switch (organizer) {
+    case "A": {
+      const g1 = trays.slice(0, 4).join("");
+      const g2 = trays.slice(4, 8).join("");
+      return g1 + " " + g2;
+    }
+    case "B": return trays.join("");
+    case "C": {
+      const g1 = trays.slice(0, 4).join("");
+      const g2 = trays.slice(4, 6).join("");
+      return g1 + " " + g2;
+    }
+    case "D": {
+      const g1 = trays.slice(0, 6).join("");
+      const g2 = trays.slice(6, 12).join("");
+      return g1 + " " + g2;
+    }
+    default: return "?";
+  }
+}
+
+function buildProductCode(grommets, organizer, trays) {
+  const s1bottom = grommets.slice(0, 5).join("");
+  const s1top    = grommets.slice(5, 7).join("");
+  const s1 = s1bottom + " " + s1top;
+  const s2 = organizer || "?";
+  const s3 = organizer ? buildS3(organizer, trays) : "?";
+  return `MDB M-${s1}-${s2}-${s3}`;
+}
+
+// ── BOM ──────────────────────────────────────────────────────────────────────
+
+function buildBOM(grommets, organizer, trays) {
+  // Section 0 — Box
+  const boxItems = [{ name: "Fiber Optic Box MDB M", orderingCode: "85C3.80/000X", qty: 1 }];
+
+  // Section 1 — Grommets
+  const gromItems = [];
+  const gromCount = {};
+  grommets.forEach(g => { if (g !== "N") gromCount[g] = (gromCount[g] || 0) + 1; });
+  Object.entries(gromCount).forEach(([code, qty]) => {
+    const g = GROMMETS.find(x => x.code === code);
+    if (g) gromItems.push({ name: g.label.replace(/^[A-Z]+ — /, ""), orderingCode: g.sku || "On request", qty });
+  });
+
+  // Section 2 — Organizer
+  const orgItems = [];
+  if (organizer) {
+    const org = ORGANIZERS.find(o => o.code === organizer);
+    if (org) orgItems.push({ name: `Organizer — Fiber Management ${organizer} (${org.type})`, orderingCode: org.sku, qty: 1 });
+  }
+
+  // Section 3 — Tray Modules
+  const trayItems = [];
+  if (organizer && trays.length) {
+    const trayDef = TRAY_DEFS[organizer];
+    const trayCnt = {};
+    trays.forEach(t => { if (t !== "N") trayCnt[t] = (trayCnt[t] || 0) + 1; });
+    Object.entries(trayCnt).forEach(([code, qty]) => {
+      const opt = trayDef.options.find(o => o.code === code);
+      if (opt) trayItems.push({ name: opt.desc, orderingCode: opt.sku || "—", qty });
+    });
+  }
+
+  return [
+    { label: "Box",          items: boxItems  },
+    { label: "Grommets",     items: gromItems },
+    { label: "Organizer",    items: orgItems  },
+    { label: "Tray Modules", items: trayItems },
+  ];
+}
+
+// ── PDF export ───────────────────────────────────────────────────────────────
+
+function generatePDF(productCode, sections) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const W = 210;
+  const M = 15;
+  const CW = W - 2 * M;
+
+  const BLUE       = [0, 51, 160];
+  const RED        = [228, 0, 43];
+  const NAVY       = [0, 31, 102];
+  const LIGHT_BLUE = [231, 245, 249];
+  const WHITE      = [255, 255, 255];
+  const DARK_GRAY  = [51, 51, 51];
+  const MID_GRAY   = [150, 150, 150];
+
+  // ── Header bar
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 0, W, 18, "F");
+  doc.setTextColor(...WHITE);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("MDB M CONFIGURATOR", M, 11.5);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("PLP · FIBER OPTIC BOX · MDB M", W - M, 11.5, { align: "right" });
+
+  // ── Red separator
+  doc.setFillColor(...RED);
+  doc.rect(0, 18, W, 1, "F");
+
+  let y = 26;
+
+  // ── Ordering code block
+  doc.setFillColor(...NAVY);
+  doc.rect(M, y, CW, 22, "F");
+  doc.setTextColor(...RED);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.text("ORDERING CODE", M + 6, y + 7);
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(18);
+  doc.setFont("courier", "bold");
+  doc.text(productCode, M + 6, y + 17);
+
+  y += 30;
+
+  // ── Section title
+  doc.setTextColor(...RED);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.text("04 — ORDER SUMMARY — BILL OF MATERIALS", M, y);
+  doc.setFillColor(...RED);
+  doc.rect(M, y + 2, CW, 0.5, "F");
+
+  y += 9;
+
+  // ── Blue banner
+  doc.setFillColor(...BLUE);
+  doc.rect(M, y, CW, 9, "F");
+  doc.setTextColor(...RED);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.text("SELECTED COMPONENTS", M + 5, y + 6);
+
+  y += 12;
+
+  // ── BOM table
+  const tableBody = [];
+  sections.forEach(({ label, items }) => {
+    tableBody.push([{
+      content: label.toUpperCase(), colSpan: 3,
+      styles: { fillColor: LIGHT_BLUE, textColor: BLUE, fontStyle: "bold",
+        fontSize: 7, cellPadding: { top: 3, bottom: 3, left: 5, right: 4 } },
+    }]);
+    if (items.length === 0) {
+      tableBody.push([{
+        content: "— not yet selected —", colSpan: 3,
+        styles: { textColor: MID_GRAY, fontStyle: "italic", fontSize: 8,
+          cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } },
+      }]);
+    } else {
+      items.forEach(item => {
+        tableBody.push([
+          { content: item.name,         styles: { textColor: DARK_GRAY, fontSize: 8, cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } } },
+          { content: item.orderingCode, styles: { textColor: BLUE, fontStyle: "bold", fontSize: 8, font: "courier", cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } } },
+          { content: String(item.qty),  styles: { textColor: item.qty > 1 ? RED : DARK_GRAY, fontStyle: "bold", halign: "center", fontSize: 9, cellPadding: { top: 4, bottom: 4, left: 4, right: 4 } } },
+        ]);
+      });
+    }
+  });
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: M, right: M },
+    head: [[
+      { content: "NAME",          styles: { fillColor: LIGHT_BLUE, textColor: BLUE, fontStyle: "bold", fontSize: 7, cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } } },
+      { content: "ORDERING CODE", styles: { fillColor: LIGHT_BLUE, textColor: BLUE, fontStyle: "bold", fontSize: 7, cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } } },
+      { content: "QTY",           styles: { fillColor: LIGHT_BLUE, textColor: BLUE, fontStyle: "bold", fontSize: 7, halign: "center", cellPadding: { top: 4, bottom: 4, left: 4, right: 4 } } },
+    ]],
+    body: tableBody,
+    columnStyles: { 0: { cellWidth: "auto" }, 1: { cellWidth: 48 }, 2: { cellWidth: 18 } },
+    styles: { lineColor: [220, 220, 220], lineWidth: 0.3 },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    tableLineColor: [220, 220, 220],
+    tableLineWidth: 0.3,
+  });
+
+  // ── Footer on every page
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(...BLUE);
+    doc.rect(0, 285, W, 12, "F");
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Page ${i} / ${pageCount}`, W / 2, 292, { align: "center" });
+  }
+
+  const safeName = productCode.replace(/[\s?]/g, "_");
+  doc.save(`MDB-M_${safeName}.pdf`);
+}
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionLabel({ num, text, done }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "10px",
+      marginBottom: "20px", paddingBottom: "12px",
+      borderBottom: `2px solid ${RED_ACCENT}` }}>
+      <span style={{ color: done ? PLP_BLUE : RED_ACCENT, fontWeight: "700", fontSize: "13px",
+        letterSpacing: "2px", fontFamily: "monospace",
+        background: done ? LIGHT_BG : "transparent",
+        padding: done ? "2px 7px" : "0",
+        border: done ? `1.5px solid ${PLP_BLUE}` : "none" }}>
+        {String(num).padStart(2, "0")} —
+      </span>
+      <span style={{ color: PLP_BLUE, fontWeight: "700", fontSize: "13px",
+        letterSpacing: "2px", textTransform: "uppercase", fontFamily: "monospace" }}>
+        {text}
+      </span>
+      {done && (
+        <span style={{ marginLeft: "auto", background: PLP_BLUE, color: "white",
+          fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+          padding: "3px 8px", fontFamily: "monospace" }}>
+          ✓ CONFIGURED
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Product code sticky bar
+function ProductCodeBar({ code, grommets, organizer, trays }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  const complete = organizer !== null && grommets.every(g => g !== null);
+
+  return (
+    <div style={{ position: "sticky", top: 0, zIndex: 100,
+      background: "#001f66", borderBottom: `3px solid ${RED_ACCENT}`,
+      padding: "0 24px", display: "flex", alignItems: "center",
+      justifyContent: "space-between", minHeight: "60px", gap: "16px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "12px", flexWrap: "wrap" }}>
+        <span style={{ color: RED_ACCENT, fontSize: "10px", fontWeight: "700",
+          letterSpacing: "2px", fontFamily: "monospace", whiteSpace: "nowrap" }}>
+          ORDERING CODE
+        </span>
+        <span style={{ color: complete ? "#7eb8f7" : "#aaa",
+          fontFamily: "monospace", fontSize: "20px", fontWeight: "700",
+          letterSpacing: "2px", wordBreak: "break-all" }}>
+          {code}
+        </span>
+      </div>
+      <button onClick={copy} style={{
+        flexShrink: 0,
+        background: copied ? RED_ACCENT : "transparent",
+        color: copied ? "white" : "#aaa",
+        border: `1px solid ${copied ? RED_ACCENT : "#555"}`,
+        padding: "7px 16px", fontSize: "10px", fontWeight: "700",
+        cursor: "pointer", letterSpacing: "1.5px", textTransform: "uppercase",
+        fontFamily: "monospace", transition: "all 0.2s", whiteSpace: "nowrap"
+      }}>
+        {copied ? "✓ COPIED" : "⎘ COPY"}
+      </button>
+    </div>
+  );
+}
+
+// Grommet picker for a single position
+function GrommetPicker({ index, isTop, value, onChange }) {
+  const opts = isTop ? GROMMETS : GROMMETS.filter(g => !g.topOnly);
+  const pos = isTop ? `TOP — POS. ${index - 4}` : `BOTTOM — POS. ${index + 1}`;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+        color: isTop ? PLP_BLUE : DARK_GRAY, fontFamily: "monospace",
+        borderBottom: `2px solid ${isTop ? PLP_BLUE : BORDER}`, paddingBottom: "4px" }}>
+        {pos}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+        {opts.map(g => {
+          const active = value === g.code;
+          return (
+            <button key={g.code} onClick={() => onChange(g.code)} style={{
+              padding: "5px 8px", cursor: "pointer", textAlign: "left",
+              fontFamily: "inherit", fontSize: "10px", fontWeight: active ? "700" : "400",
+              background: active ? PLP_BLUE : CARD_BG,
+              color: active ? "white" : (g.code === "N" ? MID_GRAY : DARK_GRAY),
+              border: active ? `2px solid ${PLP_BLUE}` : `2px solid ${BORDER}`,
+              transition: "all 0.1s", lineHeight: "1.3",
+            }}>
+              <span style={{ fontFamily: "monospace", fontWeight: "700",
+                marginRight: "6px", fontSize: "11px" }}>{g.code}</span>
+              <span style={{ fontSize: "10px", opacity: active ? 0.9 : 0.8 }}>
+                {g.label.replace(/^[A-Z]+ — /, "")}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Section 1
+function Section1({ grommets, setGrommet }) {
+  const done = grommets.every(g => g !== null);
+  return (
+    <div style={{ marginBottom: "32px" }}>
+      <SectionLabel num={1} text="Grommet Selection" done={done} />
+      <div style={{ background: CARD_BG, border: `1px solid ${BORDER}`, padding: "20px" }}>
+        <div style={{ marginBottom: "16px" }}>
+          <span style={{ fontSize: "11px", color: MID_GRAY }}>
+            Select one grommet type per cable input position.
+          </span>
+        </div>
+        {/* Layout: top row (2) then bottom row (5) */}
+        <div style={{ marginBottom: "8px" }}>
+          <div style={{ display: "flex", gap: "4px", alignItems: "flex-start",
+            marginBottom: "12px", paddingBottom: "12px", borderBottom: `1px dashed ${BORDER}` }}>
+            <div style={{ flex: "0 0 60px", display: "flex", alignItems: "center", justifyContent: "flex-end",
+              paddingRight: "10px", paddingTop: "18px" }}>
+              <span style={{ fontSize: "10px", fontWeight: "700", color: PLP_BLUE,
+                letterSpacing: "1.5px", fontFamily: "monospace", writingMode: "vertical-rl",
+                transform: "rotate(180deg)" }}>TOP</span>
+            </div>
+            {[5, 6].map(i => (
+              <div key={i} style={{ flex: 1 }}>
+                <GrommetPicker index={i} isTop={true} value={grommets[i]}
+                  onChange={v => setGrommet(i, v)} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: "4px", alignItems: "flex-start" }}>
+            <div style={{ flex: "0 0 60px", display: "flex", alignItems: "center", justifyContent: "flex-end",
+              paddingRight: "10px", paddingTop: "18px" }}>
+              <span style={{ fontSize: "10px", fontWeight: "700", color: DARK_GRAY,
+                letterSpacing: "1.5px", fontFamily: "monospace", writingMode: "vertical-rl",
+                transform: "rotate(180deg)" }}>BOTTOM</span>
+            </div>
+            {[0, 1, 2, 3, 4].map(i => (
+              <div key={i} style={{ flex: 1 }}>
+                <GrommetPicker index={i} isTop={false} value={grommets[i]}
+                  onChange={v => setGrommet(i, v)} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Quick summary */}
+        <div style={{ marginTop: "16px", padding: "10px 14px",
+          background: LIGHT_BG, border: `1px solid ${BORDER}`,
+          fontFamily: "monospace", fontSize: "13px", letterSpacing: "2px",
+          color: PLP_BLUE, fontWeight: "700", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <span style={{ color: MID_GRAY, fontWeight: "400", fontSize: "10px", letterSpacing: "1px", alignSelf: "center" }}>SECTION 1:</span>
+          <span>{grommets.slice(0,5).join("")}&nbsp;{grommets.slice(5,7).join("")}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Section 2
+function Section2({ organizer, setOrganizer }) {
+  const done = organizer !== null;
+  return (
+    <div style={{ marginBottom: "32px" }}>
+      <SectionLabel num={2} text="Organizer — Fiber Management Type" done={done} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+        {ORGANIZERS.map(org => {
+          const active = organizer === org.code;
+          return (
+            <button key={org.code} onClick={() => setOrganizer(org.code)} style={{
+              padding: "16px", cursor: "pointer", textAlign: "left",
+              fontFamily: "inherit", background: active ? PLP_BLUE : CARD_BG,
+              border: active ? `2px solid ${PLP_BLUE}` : `2px solid ${BORDER}`,
+              transition: "all 0.15s",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                <span style={{ fontFamily: "monospace", fontSize: "20px", fontWeight: "900",
+                  color: active ? "white" : PLP_BLUE }}>{org.code}</span>
+                <span style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+                  color: active ? "rgba(255,255,255,0.75)" : MID_GRAY,
+                  textTransform: "uppercase", fontFamily: "monospace" }}>{org.type}</span>
+              </div>
+              <div style={{ fontSize: "11px", lineHeight: "1.6",
+                color: active ? "rgba(255,255,255,0.85)" : DARK_GRAY }}>
+                <div>For trays {org.trays}</div>
+                <div>Capacity of up to {org.splices} splices{org.connectors ? ` and ${org.connectors} connectors` : ""}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Tray slot for Management A (KA/KB/KC/N buttons)
+function TraySlotA({ index, value, onChange }) {
+  const opts = TRAY_DEFS.A.options;
+  return (
+    <div style={{ background: LIGHT_BG, border: `1px solid ${BORDER}`, padding: "10px" }}>
+      <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+        color: MID_GRAY, fontFamily: "monospace", marginBottom: "8px" }}>
+        MODULE POSITION {index + 1}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+        {opts.map(o => {
+          const active = value === o.code;
+          return (
+            <button key={o.code} onClick={() => onChange(o.code)} style={{
+              padding: "5px 8px", cursor: "pointer", textAlign: "left",
+              fontFamily: "inherit", fontSize: "10px", fontWeight: active ? "700" : "400",
+              background: active ? PLP_BLUE : CARD_BG,
+              color: active ? "white" : (o.code === "N" ? MID_GRAY : DARK_GRAY),
+              border: active ? `2px solid ${PLP_BLUE}` : `2px solid ${BORDER}`,
+              transition: "all 0.1s", lineHeight: "1.3",
+            }}>
+              {o.desc}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Tray slot for C/D (simple button toggle)
+function TraySlotCD({ index, value, onChange, opts }) {
+  return (
+    <div style={{ background: LIGHT_BG, border: `1px solid ${BORDER}`, padding: "8px" }}>
+      <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+        color: MID_GRAY, fontFamily: "monospace", marginBottom: "6px" }}>
+        MODULE POSITION {index + 1}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+        {opts.map(o => {
+          const active = value === o.code;
+          return (
+            <button key={o.code} onClick={() => onChange(o.code)} style={{
+              padding: "5px 8px", cursor: "pointer", textAlign: "left",
+              fontFamily: "inherit", fontSize: "10px", fontWeight: active ? "700" : "400",
+              background: active ? PLP_BLUE : CARD_BG,
+              color: active ? "white" : (o.code === "N" ? MID_GRAY : DARK_GRAY),
+              border: active ? `2px solid ${PLP_BLUE}` : `2px solid ${BORDER}`,
+              transition: "all 0.1s", lineHeight: "1.3",
+            }}>
+              {o.desc}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Tray slot for B (select dropdown, many options)
+function TraySlotB({ index, value, onChange }) {
+  const opts = TRAY_DEFS.B.options;
+  return (
+    <div style={{ background: LIGHT_BG, border: `1px solid ${BORDER}`, padding: "10px" }}>
+      <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+        color: MID_GRAY, fontFamily: "monospace", marginBottom: "8px" }}>
+        MODULE POSITION {index + 1}
+      </div>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{
+        width: "100%", padding: "8px 10px",
+        border: `2px solid ${value !== "N" ? PLP_BLUE : BORDER}`,
+        fontSize: "11px", color: DARK_GRAY,
+        background: value !== "N" ? "#eef3ff" : CARD_BG,
+        fontFamily: "inherit", cursor: "pointer",
+      }}>
+        {opts.map(o => (
+          <option key={o.code} value={o.code}>{o.desc}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// Section 3
+function Section3({ organizer, trays, setTray }) {
+  if (!organizer) {
+    return (
+      <div style={{ marginBottom: "32px" }}>
+        <SectionLabel num={3} text="Tray Modules" done={false} />
+        <div style={{ background: CARD_BG, border: `1px solid ${BORDER}`, padding: "28px",
+          textAlign: "center", color: MID_GRAY, fontSize: "11px" }}>
+          Select a fiber management type in Section 02 to configure the tray modules.
+        </div>
+      </div>
+    );
+  }
+
+  const def = TRAY_DEFS[organizer];
+  const done = trays.length === def.slots;
+
+  // S3 preview
+  const s3 = buildS3(organizer, trays);
+
+  const renderSlots = () => {
+    if (organizer === "A") {
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+          {trays.map((v, i) => (
+            <TraySlotA key={i} index={i} value={v} onChange={val => setTray(i, val)} />
+          ))}
+        </div>
+      );
+    }
+    if (organizer === "B") {
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+          {trays.map((v, i) => (
+            <TraySlotB key={i} index={i} value={v} onChange={val => setTray(i, val)} />
+          ))}
+        </div>
+      );
+    }
+    if (organizer === "C") {
+      const opts = TRAY_DEFS.C.options;
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+          {trays.map((v, i) => (
+            <TraySlotCD key={i} index={i} value={v} opts={opts} onChange={val => setTray(i, val)} />
+          ))}
+        </div>
+      );
+    }
+    if (organizer === "D") {
+      const opts = TRAY_DEFS.D.options;
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "6px" }}>
+          {trays.map((v, i) => (
+            <TraySlotCD key={i} index={i} value={v} opts={opts} onChange={val => setTray(i, val)} />
+          ))}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: "32px" }}>
+      <SectionLabel num={3} text={`Tray Modules — ${def.label} (${def.slots} module positions)`} done={false} />
+      <div style={{ background: CARD_BG, border: `1px solid ${BORDER}`, padding: "20px" }}>
+        <div style={{ marginBottom: "14px" }}>
+          <span style={{ fontSize: "11px", color: MID_GRAY }}>
+            Select a tray module for each position. Each option shows the compatible module type and its splice/connector capacity.
+          </span>
+        </div>
+        {renderSlots()}
+        {/* S3 preview */}
+        <div style={{ marginTop: "16px", padding: "10px 14px",
+          background: LIGHT_BG, border: `1px solid ${BORDER}`,
+          fontFamily: "monospace", fontSize: "13px", letterSpacing: "2px",
+          color: PLP_BLUE, fontWeight: "700", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <span style={{ color: MID_GRAY, fontWeight: "400", fontSize: "10px", letterSpacing: "1px", alignSelf: "center" }}>SECTION 3:</span>
+          <span>{s3}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// BOM table
+function BOMTable({ grommets, organizer, trays, productCode }) {
+  const sections = useMemo(() => buildBOM(grommets, organizer, trays), [grommets, organizer, trays]);
+
+  let rowIdx = 0;
+  return (
+    <div style={{ marginBottom: "32px" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+        marginBottom: "20px", paddingBottom: "12px", borderBottom: `2px solid ${RED_ACCENT}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ color: RED_ACCENT, fontWeight: "700", fontSize: "13px",
+            letterSpacing: "2px", fontFamily: "monospace" }}>04 —</span>
+          <span style={{ color: PLP_BLUE, fontWeight: "700", fontSize: "13px",
+            letterSpacing: "2px", textTransform: "uppercase", fontFamily: "monospace" }}>
+            Order Summary — Bill of Materials
+          </span>
+        </div>
+        <button onClick={() => generatePDF(productCode, sections)}
+          style={{ background: PLP_BLUE, color: "white", border: "none", cursor: "pointer",
+            padding: "8px 16px", fontFamily: "'Barlow', Arial, sans-serif", fontWeight: "700",
+            fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase",
+            display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          ↓ Download as PDF
+        </button>
+      </div>
+      <div style={{ background: CARD_BG, border: `1px solid ${BORDER}`,
+        borderTop: `3px solid ${RED_ACCENT}`, overflow: "hidden" }}>
+        <div style={{ background: PLP_BLUE, padding: "12px 20px",
+          display: "flex", alignItems: "center" }}>
+          <span style={{ color: RED_ACCENT, fontWeight: "900", fontSize: "11px",
+            letterSpacing: "2px", fontFamily: "monospace" }}>
+            ◈ SELECTED COMPONENTS
+          </span>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+            <thead>
+              <tr style={{ background: LIGHT_BG }}>
+                {["Name", "Ordering Code", "Qty"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left",
+                    fontWeight: "700", fontSize: "10px", letterSpacing: "1.5px",
+                    textTransform: "uppercase", color: PLP_BLUE, fontFamily: "monospace",
+                    borderBottom: `2px solid ${BORDER}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sections.map(({ label, items }) => [
+                // Section header row
+                <tr key={`hdr-${label}`} style={{ background: LIGHT_BG, borderBottom: `1px solid ${BORDER}` }}>
+                  <td colSpan={3} style={{ padding: "5px 14px", fontWeight: "700", fontSize: "9px",
+                    letterSpacing: "2px", textTransform: "uppercase", color: PLP_BLUE,
+                    fontFamily: "monospace" }}>
+                    {label}
+                  </td>
+                </tr>,
+                // Item rows (or empty placeholder)
+                items.length === 0
+                  ? <tr key={`empty-${label}`} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                      <td colSpan={3} style={{ padding: "8px 14px", color: MID_GRAY,
+                        fontSize: "11px", fontStyle: "italic" }}>— not yet selected —</td>
+                    </tr>
+                  : items.map((item) => {
+                      const bg = rowIdx++ % 2 === 0 ? CARD_BG : "#fafafa";
+                      return (
+                        <tr key={`${label}-${item.name}`} style={{ borderBottom: `1px solid ${BORDER}`, background: bg }}>
+                          <td style={{ padding: "9px 14px", color: DARK_GRAY, lineHeight: "1.4" }}>{item.name}</td>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace", fontWeight: "700",
+                            color: PLP_BLUE, fontSize: "12px", whiteSpace: "nowrap" }}>{item.orderingCode}</td>
+                          <td style={{ padding: "9px 14px", textAlign: "center", fontWeight: "700",
+                            fontFamily: "monospace", color: item.qty > 1 ? RED_ACCENT : DARK_GRAY,
+                            fontSize: "13px" }}>{item.qty}</td>
+                        </tr>
+                      );
+                    }),
+              ])}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App root ─────────────────────────────────────────────────────────────────
+
+function App() {
+  const [grommets, setGrommets] = useState(Array(7).fill("N"));
+  const [organizer, setOrganizerState] = useState(null);
+  const [trays, setTrays] = useState([]);
+
+  const setGrommet = useCallback((i, v) => {
+    setGrommets(prev => {
+      const next = [...prev];
+      next[i] = v;
+      return next;
+    });
+  }, []);
+
+  const setOrganizer = useCallback((code) => {
+    setOrganizerState(code);
+    setTrays([...DEFAULT_TRAYS[code]]);
+  }, []);
+
+  const setTray = useCallback((i, v) => {
+    setTrays(prev => {
+      const next = [...prev];
+      next[i] = v;
+      return next;
+    });
+  }, []);
+
+  const productCode = useMemo(
+    () => buildProductCode(grommets, organizer, trays),
+    [grommets, organizer, trays]
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", background: LIGHT_BG,
+      fontFamily: "'Barlow', Arial, sans-serif" }}>
+      {/* Navbar */}
+      <div style={{ background: PLP_BLUE, padding: "0 32px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        height: "52px", borderBottom: "3px solid rgba(255,255,255,0.3)" }}>
+        <h1 style={{ margin: 0, fontSize: "20px", fontWeight: "900", color: "white",
+          letterSpacing: "-0.5px", textTransform: "uppercase" }}>
+          MDB M <span style={{ color: "white", opacity: 0.6 }}>CONFIGURATOR</span>
+        </h1>
+        <div style={{ border: "1.5px solid rgba(255,255,255,0.5)", padding: "4px 10px",
+          color: "white", fontSize: "10px", fontWeight: "700",
+          letterSpacing: "2px", fontFamily: "monospace" }}>
+          PLP · FIBER OPTIC BOX · MDB M
+        </div>
+      </div>
+
+      {/* Sticky product code */}
+      <ProductCodeBar code={productCode} grommets={grommets}
+        organizer={organizer} trays={trays} />
+
+      {/* Content */}
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 24px 80px" }}>
+
+        {/* Section 0 — Box (static) */}
+        <div style={{ marginBottom: "32px" }}>
+          <SectionLabel num={0} text="Box" done={true} />
+          <div style={{ background: CARD_BG, border: `1px solid ${BORDER}`, padding: "16px 20px",
+            display: "flex", alignItems: "center", gap: "20px" }}>
+            <span style={{ fontFamily: "monospace", fontSize: "24px", fontWeight: "900",
+              color: PLP_BLUE, letterSpacing: "3px" }}>MDB M</span>
+            <span style={{ fontSize: "11px", color: MID_GRAY, lineHeight: "1.5" }}>
+              Fiber Optic Box MDB M – always included in the ordering code.
+            </span>
+          </div>
+        </div>
+
+        {/* Section 1 */}
+        <Section1 grommets={grommets} setGrommet={setGrommet} />
+
+        {/* Section 2 */}
+        <Section2 organizer={organizer} setOrganizer={setOrganizer} />
+
+        {/* Section 3 */}
+        <Section3 organizer={organizer} trays={trays} setTray={setTray} />
+
+        {/* BOM */}
+        <BOMTable grommets={grommets} organizer={organizer} trays={trays} productCode={productCode} />
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", fontSize: "10px", color: MID_GRAY,
+          fontFamily: "monospace", letterSpacing: "1px", marginTop: "40px" }}>
+          PLP GROUP · MDB M FIBER OPTIC BOX CONFIGURATOR
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
