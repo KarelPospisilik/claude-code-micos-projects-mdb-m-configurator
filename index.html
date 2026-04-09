@@ -24,6 +24,11 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #E7F5F9; }
     ::-webkit-scrollbar-thumb { background: #0033A0; }
+    .btn-pdf { background: #F07800; color: white; border: none; cursor: pointer;
+      padding: 8px 18px; font-family: 'Barlow', Arial, sans-serif; font-weight: 700;
+      font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0; transition: background 0.15s; }
+    .btn-pdf:hover { background: #C95F00; }
   </style>
 </head>
 <body>
@@ -284,7 +289,7 @@ function generatePDF(productCode, sections) {
   doc.setTextColor(...RED);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("04 — ORDER SUMMARY — BILL OF MATERIALS", M, y);
+  doc.text("ORDER SUMMARY — BILL OF MATERIALS", M, y);
   doc.setFillColor(...RED);
   doc.rect(M, y + 2, CW, 0.5, "F");
 
@@ -319,7 +324,7 @@ function generatePDF(productCode, sections) {
         tableBody.push([
           { content: item.name,         styles: { textColor: DARK_GRAY, fontSize: 8, cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } } },
           { content: item.orderingCode, styles: { textColor: BLUE, fontStyle: "bold", fontSize: 8, font: "courier", cellPadding: { top: 4, bottom: 4, left: 5, right: 4 } } },
-          { content: String(item.qty),  styles: { textColor: item.qty > 1 ? RED : DARK_GRAY, fontStyle: "bold", halign: "center", fontSize: 9, cellPadding: { top: 4, bottom: 4, left: 4, right: 4 } } },
+          { content: String(item.qty),  styles: { textColor: BLUE, fontStyle: "bold", halign: "center", fontSize: 9, cellPadding: { top: 4, bottom: 4, left: 4, right: 4 } } },
         ]);
       });
     }
@@ -359,29 +364,19 @@ function generatePDF(productCode, sections) {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function SectionLabel({ num, text, done }) {
+function SectionLabel({ num, text }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px",
       marginBottom: "20px", paddingBottom: "12px",
       borderBottom: `2px solid ${RED_ACCENT}` }}>
-      <span style={{ color: done ? PLP_BLUE : RED_ACCENT, fontWeight: "700", fontSize: "13px",
-        letterSpacing: "2px", fontFamily: "monospace",
-        background: done ? LIGHT_BG : "transparent",
-        padding: done ? "2px 7px" : "0",
-        border: done ? `1.5px solid ${PLP_BLUE}` : "none" }}>
+      <span style={{ color: RED_ACCENT, fontWeight: "700", fontSize: "13px",
+        letterSpacing: "2px", fontFamily: "monospace" }}>
         {String(num).padStart(2, "0")} —
       </span>
       <span style={{ color: PLP_BLUE, fontWeight: "700", fontSize: "13px",
         letterSpacing: "2px", textTransform: "uppercase", fontFamily: "monospace" }}>
         {text}
       </span>
-      {done && (
-        <span style={{ marginLeft: "auto", background: PLP_BLUE, color: "white",
-          fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-          padding: "3px 8px", fontFamily: "monospace" }}>
-          ✓ CONFIGURED
-        </span>
-      )}
     </div>
   );
 }
@@ -435,8 +430,8 @@ function GrommetPicker({ index, isTop, value, onChange }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-        color: isTop ? PLP_BLUE : DARK_GRAY, fontFamily: "monospace",
-        borderBottom: `2px solid ${isTop ? PLP_BLUE : BORDER}`, paddingBottom: "4px" }}>
+        color: PLP_BLUE, fontFamily: "monospace",
+        borderBottom: `2px solid ${PLP_BLUE}`, paddingBottom: "4px" }}>
         {pos}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -741,11 +736,7 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
             Order Summary — Bill of Materials
           </span>
         </div>
-        <button onClick={() => generatePDF(productCode, sections)}
-          style={{ background: PLP_BLUE, color: "white", border: "none", cursor: "pointer",
-            padding: "8px 16px", fontFamily: "'Barlow', Arial, sans-serif", fontWeight: "700",
-            fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase",
-            display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+        <button onClick={() => generatePDF(productCode, sections)} className="btn-pdf">
           ↓ Download as PDF
         </button>
       </div>
@@ -755,16 +746,16 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
           display: "flex", alignItems: "center" }}>
           <span style={{ color: RED_ACCENT, fontWeight: "900", fontSize: "11px",
             letterSpacing: "2px", fontFamily: "monospace" }}>
-            ◈ SELECTED COMPONENTS
+            SELECTED COMPONENTS
           </span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
             <thead>
               <tr style={{ background: LIGHT_BG }}>
-                {["Name", "Ordering Code", "Qty"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left",
-                    fontWeight: "700", fontSize: "10px", letterSpacing: "1.5px",
+                {[["Name", "left"], ["Ordering Code", "left"], ["Qty", "center"]].map(([h, align]) => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: align,
+                    fontWeight: "700", fontSize: "11px", letterSpacing: "1.5px",
                     textTransform: "uppercase", color: PLP_BLUE, fontFamily: "monospace",
                     borderBottom: `2px solid ${BORDER}` }}>{h}</th>
                 ))}
@@ -774,7 +765,7 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
               {sections.map(({ label, items }) => [
                 // Section header row
                 <tr key={`hdr-${label}`} style={{ background: LIGHT_BG, borderBottom: `1px solid ${BORDER}` }}>
-                  <td colSpan={3} style={{ padding: "5px 14px", fontWeight: "700", fontSize: "9px",
+                  <td colSpan={3} style={{ padding: "5px 14px", fontWeight: "700", fontSize: "11px",
                     letterSpacing: "2px", textTransform: "uppercase", color: PLP_BLUE,
                     fontFamily: "monospace" }}>
                     {label}
@@ -794,8 +785,8 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
                           <td style={{ padding: "9px 14px", fontFamily: "monospace", fontWeight: "700",
                             color: PLP_BLUE, fontSize: "12px", whiteSpace: "nowrap" }}>{item.orderingCode}</td>
                           <td style={{ padding: "9px 14px", textAlign: "center", fontWeight: "700",
-                            fontFamily: "monospace", color: item.qty > 1 ? RED_ACCENT : DARK_GRAY,
-                            fontSize: "13px" }}>{item.qty}</td>
+                            fontFamily: "monospace", color: PLP_BLUE,
+                            fontSize: "12px" }}>{item.qty}</td>
                         </tr>
                       );
                     }),
@@ -891,11 +882,6 @@ function App() {
         {/* BOM */}
         <BOMTable grommets={grommets} organizer={organizer} trays={trays} productCode={productCode} />
 
-        {/* Footer */}
-        <div style={{ textAlign: "center", fontSize: "10px", color: MID_GRAY,
-          fontFamily: "monospace", letterSpacing: "1px", marginTop: "40px" }}>
-          PLP GROUP · MDB M FIBER OPTIC BOX CONFIGURATOR
-        </div>
       </div>
     </div>
   );
