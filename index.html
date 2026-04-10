@@ -10,9 +10,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Barlow', Arial, sans-serif; }
+    body { font-family: 'Inter', Arial, sans-serif; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
@@ -25,7 +25,7 @@
     ::-webkit-scrollbar-track { background: #E7F5F9; }
     ::-webkit-scrollbar-thumb { background: #0033A0; }
     .btn-pdf { background: #F07800; color: white; border: none; cursor: pointer;
-      padding: 8px 18px; font-family: 'Barlow', Arial, sans-serif; font-weight: 700;
+      padding: 8px 18px; font-family: 'Inter', Arial, sans-serif; font-weight: 700;
       font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
       display: flex; align-items: center; gap: 8px; flex-shrink: 0; transition: background 0.15s; }
     .btn-pdf:hover { background: #C95F00; }
@@ -280,7 +280,7 @@ function generatePDF(productCode, sections) {
   doc.text("ORDERING CODE", M + 6, y + 7);
   doc.setTextColor(...WHITE);
   doc.setFontSize(18);
-  doc.setFont("courier", "bold");
+  doc.setFont("helvetica", "bold");
   doc.text(productCode, M + 6, y + 17);
 
   y += 30;
@@ -370,11 +370,11 @@ function SectionLabel({ num, text }) {
       marginBottom: "20px", paddingBottom: "12px",
       borderBottom: `2px solid ${RED_ACCENT}` }}>
       <span style={{ color: RED_ACCENT, fontWeight: "700", fontSize: "13px",
-        letterSpacing: "2px", fontFamily: "monospace" }}>
+        letterSpacing: "2px", fontFamily: "'Inter', sans-serif" }}>
         {String(num).padStart(2, "0")} —
       </span>
       <span style={{ color: PLP_BLUE, fontWeight: "700", fontSize: "13px",
-        letterSpacing: "2px", textTransform: "uppercase", fontFamily: "monospace" }}>
+        letterSpacing: "2px", textTransform: "uppercase", fontFamily: "'Inter', sans-serif" }}>
         {text}
       </span>
     </div>
@@ -399,11 +399,11 @@ function ProductCodeBar({ code, grommets, organizer, trays }) {
       justifyContent: "space-between", minHeight: "60px", gap: "16px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "12px", flexWrap: "wrap" }}>
         <span style={{ color: RED_ACCENT, fontSize: "10px", fontWeight: "700",
-          letterSpacing: "2px", fontFamily: "monospace", whiteSpace: "nowrap" }}>
+          letterSpacing: "2px", fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap" }}>
           ORDERING CODE
         </span>
         <span style={{ color: complete ? "#7eb8f7" : "#aaa",
-          fontFamily: "monospace", fontSize: "20px", fontWeight: "700",
+          fontFamily: "'Inter', sans-serif", fontSize: "20px", fontWeight: "700",
           letterSpacing: "2px", wordBreak: "break-all" }}>
           {code}
         </span>
@@ -415,7 +415,7 @@ function ProductCodeBar({ code, grommets, organizer, trays }) {
         border: `1px solid ${copied ? RED_ACCENT : "#555"}`,
         padding: "7px 16px", fontSize: "10px", fontWeight: "700",
         cursor: "pointer", letterSpacing: "1.5px", textTransform: "uppercase",
-        fontFamily: "monospace", transition: "all 0.2s", whiteSpace: "nowrap"
+        fontFamily: "'Inter', sans-serif", transition: "all 0.2s", whiteSpace: "nowrap"
       }}>
         {copied ? "✓ COPIED" : "⎘ COPY"}
       </button>
@@ -430,7 +430,7 @@ function GrommetPicker({ index, isTop, value, onChange }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-        color: PLP_BLUE, fontFamily: "monospace",
+        color: PLP_BLUE, fontFamily: "'Inter', sans-serif",
         borderBottom: `2px solid ${PLP_BLUE}`, paddingBottom: "4px" }}>
         {pos}
       </div>
@@ -446,7 +446,7 @@ function GrommetPicker({ index, isTop, value, onChange }) {
               border: active ? `2px solid ${PLP_BLUE}` : `2px solid ${BORDER}`,
               transition: "all 0.1s", lineHeight: "1.3",
             }}>
-              <span style={{ fontFamily: "monospace", fontWeight: "700",
+              <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: "700",
                 marginRight: "6px", fontSize: "11px" }}>{g.code}</span>
               <span style={{ fontSize: "10px", opacity: active ? 0.9 : 0.8 }}>
                 {g.label.replace(/^[A-Z]+ — /, "")}
@@ -478,7 +478,7 @@ function Section1({ grommets, setGrommet }) {
             <div style={{ flex: "0 0 60px", display: "flex", alignItems: "center", justifyContent: "flex-end",
               paddingRight: "10px", paddingTop: "18px" }}>
               <span style={{ fontSize: "10px", fontWeight: "700", color: PLP_BLUE,
-                letterSpacing: "1.5px", fontFamily: "monospace", writingMode: "vertical-rl",
+                letterSpacing: "1.5px", fontFamily: "'Inter', sans-serif", writingMode: "vertical-rl",
                 transform: "rotate(180deg)" }}>TOP</span>
             </div>
             {[5, 6].map(i => (
@@ -492,7 +492,7 @@ function Section1({ grommets, setGrommet }) {
             <div style={{ flex: "0 0 60px", display: "flex", alignItems: "center", justifyContent: "flex-end",
               paddingRight: "10px", paddingTop: "18px" }}>
               <span style={{ fontSize: "10px", fontWeight: "700", color: PLP_BLUE,
-                letterSpacing: "1.5px", fontFamily: "monospace", writingMode: "vertical-rl",
+                letterSpacing: "1.5px", fontFamily: "'Inter', sans-serif", writingMode: "vertical-rl",
                 transform: "rotate(180deg)" }}>BOTTOM</span>
             </div>
             {[0, 1, 2, 3, 4].map(i => (
@@ -506,7 +506,7 @@ function Section1({ grommets, setGrommet }) {
         {/* Quick summary */}
         <div style={{ marginTop: "16px", padding: "10px 14px",
           background: LIGHT_BG, border: `1px solid ${BORDER}`,
-          fontFamily: "monospace", fontSize: "13px", letterSpacing: "2px",
+          fontFamily: "'Inter', sans-serif", fontSize: "13px", letterSpacing: "2px",
           color: PLP_BLUE, fontWeight: "700", display: "flex", gap: "12px", flexWrap: "wrap" }}>
           <span style={{ color: MID_GRAY, fontWeight: "400", fontSize: "10px", letterSpacing: "1px", alignSelf: "center" }}>SECTION 1:</span>
           <span>{grommets.slice(0,5).join("")}&nbsp;{grommets.slice(5,7).join("")}</span>
@@ -533,11 +533,11 @@ function Section2({ organizer, setOrganizer }) {
               transition: "all 0.15s",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                <span style={{ fontFamily: "monospace", fontSize: "20px", fontWeight: "900",
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "20px", fontWeight: "900",
                   color: active ? "white" : PLP_BLUE }}>{org.code}</span>
                 <span style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
                   color: active ? "rgba(255,255,255,0.75)" : MID_GRAY,
-                  textTransform: "uppercase", fontFamily: "monospace" }}>{org.type}</span>
+                  textTransform: "uppercase", fontFamily: "'Inter', sans-serif" }}>{org.type}</span>
               </div>
               <div style={{ fontSize: "11px", lineHeight: "1.6",
                 color: active ? "rgba(255,255,255,0.85)" : DARK_GRAY }}>
@@ -558,7 +558,7 @@ function TraySlotA({ index, value, onChange }) {
   return (
     <div style={{ background: LIGHT_BG, border: `1px solid ${BORDER}`, padding: "10px" }}>
       <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-        color: MID_GRAY, fontFamily: "monospace", marginBottom: "8px" }}>
+        color: MID_GRAY, fontFamily: "'Inter', sans-serif", marginBottom: "8px" }}>
         MODULE POSITION {index + 1}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -587,7 +587,7 @@ function TraySlotCD({ index, value, onChange, opts }) {
   return (
     <div style={{ background: LIGHT_BG, border: `1px solid ${BORDER}`, padding: "8px" }}>
       <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-        color: MID_GRAY, fontFamily: "monospace", marginBottom: "6px" }}>
+        color: MID_GRAY, fontFamily: "'Inter', sans-serif", marginBottom: "6px" }}>
         MODULE POSITION {index + 1}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -617,7 +617,7 @@ function TraySlotB({ index, value, onChange }) {
   return (
     <div style={{ background: LIGHT_BG, border: `1px solid ${BORDER}`, padding: "10px" }}>
       <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-        color: MID_GRAY, fontFamily: "monospace", marginBottom: "8px" }}>
+        color: MID_GRAY, fontFamily: "'Inter', sans-serif", marginBottom: "8px" }}>
         MODULE POSITION {index + 1}
       </div>
       <select value={value} onChange={e => onChange(e.target.value)} style={{
@@ -709,7 +709,7 @@ function Section3({ organizer, trays, setTray }) {
         {/* S3 preview */}
         <div style={{ marginTop: "16px", padding: "10px 14px",
           background: LIGHT_BG, border: `1px solid ${BORDER}`,
-          fontFamily: "monospace", fontSize: "13px", letterSpacing: "2px",
+          fontFamily: "'Inter', sans-serif", fontSize: "13px", letterSpacing: "2px",
           color: PLP_BLUE, fontWeight: "700", display: "flex", gap: "12px", flexWrap: "wrap" }}>
           <span style={{ color: MID_GRAY, fontWeight: "400", fontSize: "10px", letterSpacing: "1px", alignSelf: "center" }}>SECTION 3:</span>
           <span>{s3}</span>
@@ -730,9 +730,9 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
         marginBottom: "20px", paddingBottom: "12px", borderBottom: `2px solid ${RED_ACCENT}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ color: RED_ACCENT, fontWeight: "700", fontSize: "13px",
-            letterSpacing: "2px", fontFamily: "monospace" }}>04 —</span>
+            letterSpacing: "2px", fontFamily: "'Inter', sans-serif" }}>04 —</span>
           <span style={{ color: PLP_BLUE, fontWeight: "700", fontSize: "13px",
-            letterSpacing: "2px", textTransform: "uppercase", fontFamily: "monospace" }}>
+            letterSpacing: "2px", textTransform: "uppercase", fontFamily: "'Inter', sans-serif" }}>
             Order Summary — Bill of Materials
           </span>
         </div>
@@ -744,7 +744,7 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
         <div style={{ background: PLP_BLUE, padding: "12px 20px",
           display: "flex", alignItems: "center" }}>
           <span style={{ color: RED_ACCENT, fontWeight: "900", fontSize: "11px",
-            letterSpacing: "2px", fontFamily: "monospace" }}>
+            letterSpacing: "2px", fontFamily: "'Inter', sans-serif" }}>
             SELECTED COMPONENTS
           </span>
         </div>
@@ -755,7 +755,7 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
                 {[["Name", "left"], ["Ordering Code", "left"], ["Qty", "center"]].map(([h, align]) => (
                   <th key={h} style={{ padding: "10px 14px", textAlign: align,
                     fontWeight: "700", fontSize: "11px", letterSpacing: "1.5px",
-                    textTransform: "uppercase", color: PLP_BLUE, fontFamily: "monospace",
+                    textTransform: "uppercase", color: PLP_BLUE, fontFamily: "'Inter', sans-serif",
                     borderBottom: `2px solid ${BORDER}` }}>{h}</th>
                 ))}
               </tr>
@@ -766,7 +766,7 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
                 <tr key={`hdr-${label}`} style={{ background: LIGHT_BG, borderBottom: `1px solid ${BORDER}` }}>
                   <td colSpan={3} style={{ padding: "5px 14px", fontWeight: "700", fontSize: "11px",
                     letterSpacing: "2px", textTransform: "uppercase", color: PLP_BLUE,
-                    fontFamily: "monospace" }}>
+                    fontFamily: "'Inter', sans-serif" }}>
                     {label}
                   </td>
                 </tr>,
@@ -781,10 +781,10 @@ function BOMTable({ grommets, organizer, trays, productCode }) {
                       return (
                         <tr key={`${label}-${item.name}`} style={{ borderBottom: `1px solid ${BORDER}`, background: bg }}>
                           <td style={{ padding: "9px 14px", color: DARK_GRAY, lineHeight: "1.4" }}>{item.name}</td>
-                          <td style={{ padding: "9px 14px", fontFamily: "monospace", fontWeight: "700",
+                          <td style={{ padding: "9px 14px", fontFamily: "'Inter', sans-serif", fontWeight: "700",
                             color: PLP_BLUE, fontSize: "12px", whiteSpace: "nowrap" }}>{item.orderingCode}</td>
                           <td style={{ padding: "9px 14px", textAlign: "center", fontWeight: "700",
-                            fontFamily: "monospace", color: PLP_BLUE,
+                            fontFamily: "'Inter', sans-serif", color: PLP_BLUE,
                             fontSize: "12px" }}>{item.qty}</td>
                         </tr>
                       );
@@ -833,7 +833,7 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: LIGHT_BG,
-      fontFamily: "'Barlow', Arial, sans-serif" }}>
+      fontFamily: "'Inter', Arial, sans-serif" }}>
       {/* Navbar */}
       <div style={{ background: PLP_BLUE, padding: "0 32px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -844,7 +844,7 @@ function App() {
         </h1>
         <div style={{ border: "1.5px solid rgba(255,255,255,0.5)", padding: "4px 10px",
           color: "white", fontSize: "10px", fontWeight: "700",
-          letterSpacing: "2px", fontFamily: "monospace" }}>
+          letterSpacing: "2px", fontFamily: "'Inter', sans-serif" }}>
           PLP · FIBER OPTIC BOX · MDB M
         </div>
       </div>
@@ -861,7 +861,7 @@ function App() {
           <SectionLabel num={0} text="Box" done={true} />
           <div style={{ background: CARD_BG, border: `1px solid ${BORDER}`, padding: "16px 20px",
             display: "flex", alignItems: "center", gap: "20px" }}>
-            <span style={{ fontFamily: "monospace", fontSize: "24px", fontWeight: "900",
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "24px", fontWeight: "900",
               color: PLP_BLUE, letterSpacing: "3px" }}>MDB M</span>
             <span style={{ fontSize: "11px", color: MID_GRAY, lineHeight: "1.5" }}>
               Fiber Optic Box MDB M – always included in the ordering code.
