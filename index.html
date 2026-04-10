@@ -293,17 +293,17 @@ async function generatePDF(productCode, sections) {
 
   // ── Ordering code block
   doc.setFillColor(...NAVY);
-  doc.rect(M, y, CW, 22, "F");
+  doc.rect(M, y, CW, 20, "F");
   doc.setTextColor(...RED);
   doc.setFontSize(7);
   doc.setFont("DejaVuSans", "bold");
   doc.text("ORDERING CODE", M + 6, y + 7);
   doc.setTextColor(...WHITE);
-  doc.setFontSize(18);
+  doc.setFontSize(14);
   doc.setFont("DejaVuSans", "bold");
-  doc.text(productCode, M + 6, y + 17);
+  doc.text(productCode, M + 6, y + 16);
 
-  y += 30;
+  y += 28;
 
   // ── Section title
   doc.setTextColor(...BLUE);
